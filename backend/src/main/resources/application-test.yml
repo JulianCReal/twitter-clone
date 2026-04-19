@@ -1,0 +1,32 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  # En tests no necesitamos conectar a Auth0 real
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://test.auth0.com/
+          audiences: test-audience
+
+auth0:
+  domain: test.auth0.com
+  audience: test-audience
+
+app:
+  cors:
+    allowed-origins: http://localhost:3000
+
+springdoc:
+  api-docs:
+    enabled: false
