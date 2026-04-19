@@ -22,32 +22,53 @@ public class UserService {
     private final UserRepository userRepository;
     private final PostRepository postRepository;
 
-    /**
-     * Busca el usuario por su auth0Id. Si no existe, lo crea automáticamente
-     * con los datos del JWT (registro implícito en el primer login).
-     */
     @Transactional
     public User findOrCreateFromJwt(Jwt jwt) {
-        String auth0Id = jwt.getSubject(); // "auth0|abc123"
+        String auth0Id = jwt.getSubject(); // "auth0|abc123" o "google-oauth2|abc123"
 
         return userRepository.findByAuth0Id(auth0Id)
                 .orElseGet(() -> {
-                    String email = jwt.getClaimAsString("email");
-                    String name  = jwt.getClaimAsString("nickname");
-                    String picture = jwt.getClaimAsString("picture");
+                    // Auth0 no incluye email/nickname en el access token por defecto.
+                    // Leemos los claims de forma defensiva con fallbacks seguros.
+                    String email    = jwt.getClaimAsString("email");
+                    String nickname = jwt.getClaimAsString("nickname");
+                    String name     = jwt.getClaimAsString("name");
+                    String picture  = jwt.getClaimAsString("picture");
 
-                    // Asegurar username único si hay colisión
-                    String username = buildUniqueUsername(name != null ? name : email.split("@")[0]);
+                    // Construir baseUsername de forma segura
+                    String baseUsername;
+                    if (nickname != null && !nickname.isBlank()) {
+                        baseUsername = nickname;
+                    } else if (name != null && !name.isBlank()) {
+                        baseUsername = name;
+                    } else if (email != null && email.contains("@")) {
+                        baseUsername = email.split("@")[0];
+                    } else {
+                        // Fallback: usar la parte final del sub (ej: "abc123" de "auth0|abc123")
+                        String[] parts = auth0Id.split("[|_]");
+                        baseUsername = parts[parts.length - 1];
+                    }
+
+                    // Construir email de forma segura
+                    if (email == null || email.isBlank()) {
+                        // Generar email ficticio único basado en el sub
+                        email = auth0Id.replaceAll("[^a-zA-Z0-9]", "_") + "@placeholder.com";
+                    }
+
+                    String username = buildUniqueUsername(baseUsername);
 
                     User newUser = User.builder()
                             .auth0Id(auth0Id)
                             .email(email)
                             .username(username)
                             .avatarUrl(picture)
+                            .createdAt(java.time.Instant.now())
                             .build();
 
-                    log.info("Nuevo usuario creado desde Auth0: {}", username);
-                    return userRepository.save(newUser);
+                    log.info("Nuevo usuario creado desde Auth0: {} (sub: {})", username, auth0Id);
+                    User saved = userRepository.save(newUser);
+                    // Re-leer desde BD para obtener createdAt generado por Hibernate
+                    return userRepository.findById(saved.getId()).orElse(saved);
                 });
     }
 
@@ -61,11 +82,12 @@ public class UserService {
     public UserResponse updateProfile(Jwt jwt, UpdateProfileRequest request) {
         User user = findOrCreateFromJwt(jwt);
 
-        if (request.getUsername() != null) {
+        if (request.getUsername() != null && !request.getUsername().isBlank()) {
             boolean taken = userRepository.existsByUsername(request.getUsername())
                     && !user.getUsername().equals(request.getUsername());
             if (taken) {
-                throw new IllegalArgumentException("El username '" + request.getUsername() + "' ya está en uso");
+                throw new IllegalArgumentException(
+                        "El username '" + request.getUsername() + "' ya está en uso");
             }
             user.setUsername(request.getUsername());
         }
@@ -87,8 +109,10 @@ public class UserService {
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private String buildUniqueUsername(String base) {
+        // Limpiar caracteres no válidos y pasar a minúsculas
         String candidate = base.replaceAll("[^a-zA-Z0-9_]", "").toLowerCase();
         if (candidate.isBlank()) candidate = "user";
+        if (candidate.length() > 40) candidate = candidate.substring(0, 40);
 
         String username = candidate;
         int suffix = 1;

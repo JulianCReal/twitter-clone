@@ -1,0 +1,35 @@
+/* ── Navbar ──────────────────────────────────────────────────────────────────── */
+.navbar {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+  height: 56px;
+  background: rgba(13, 17, 23, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.navbar-brand {
+  display: flex; align-items: center; gap: 8px;
+  text-decoration: none; color: inherit;
+}
+
+.brand-icon { color: var(--accent); font-size: 14px; }
+
+.brand-name {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-1);
+  letter-spacing: -0.3px;
+}
+
+.navbar-actions { display: flex; align-items: center; gap: 12px; }
+
+.user-section { display: flex; align-items: center; gap: 10px; }
+
+.username-display {
+  font-size: 13px;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+}
