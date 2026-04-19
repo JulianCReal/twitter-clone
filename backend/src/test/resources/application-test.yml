@@ -17,7 +17,7 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: https://test.auth0.com/
-          audiences: test-audience
+          jwk-set-uri: https://test.auth0.com/.well-known/jwks.json
 
 auth0:
   domain: test.auth0.com

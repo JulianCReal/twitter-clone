@@ -30,6 +30,7 @@ spring:
         jwt:
           # Reemplaza con tu dominio de Auth0
           issuer-uri: https://YOUR-AUTH0-DOMAIN.auth0.com/
+          jwk-set-uri: https://YOUR-AUTH0-DOMAIN.auth0.com/.well-known/jwks.json
           audiences: YOUR-AUTH0-API-AUDIENCE
 
 # Swagger / OpenAPI

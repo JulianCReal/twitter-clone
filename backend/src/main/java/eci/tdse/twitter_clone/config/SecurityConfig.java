@@ -22,6 +22,12 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    // ⚠️ Usamos jwk-set-uri en lugar de issuer-uri para evitar llamadas HTTP al arrancar.
+    // fromOidcIssuerLocation() intenta conectarse a Auth0 al crear el bean,
+    // lo que rompe los tests. withJwkSetUri() carga las claves de forma lazy (solo al validar).
+    @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
+    private String jwkSetUri;
+
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
     private String issuerUri;
 
@@ -39,10 +45,10 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Endpoints públicos (sin autenticación)
+                        // Endpoints públicos
                         .requestMatchers(HttpMethod.GET, "/api/stream/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
-                        // Swagger UI — acceso público
+                        // Swagger UI y H2 — acceso público
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html",
                                 "/api-docs/**", "/h2-console/**").permitAll()
                         // Todo lo demás requiere JWT válido
@@ -57,13 +63,11 @@ public class SecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        NimbusJwtDecoder decoder = JwtDecoders.fromOidcIssuerLocation(issuerUri);
+        // withJwkSetUri NO hace llamadas HTTP al arrancar — solo cuando valida un token real.
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
 
-        // Validar que el token incluye el audience correcto de Auth0
-        OAuth2TokenValidator<Jwt> audienceValidator =
-                new AudienceValidator(List.of(audience));
-        OAuth2TokenValidator<Jwt> withIssuer =
-                JwtValidators.createDefaultWithIssuer(issuerUri);
+        OAuth2TokenValidator<Jwt> audienceValidator = new AudienceValidator(List.of(audience));
+        OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer(issuerUri);
         OAuth2TokenValidator<Jwt> withAudience =
                 new DelegatingOAuth2TokenValidator<>(withIssuer, audienceValidator);
 
