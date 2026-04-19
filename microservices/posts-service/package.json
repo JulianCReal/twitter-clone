@@ -1,0 +1,10 @@
+{
+  "name": "posts-service",
+  "version": "1.0.0",
+  "description": "Lambda microservice for post creation and deletion",
+  "main": "handler.js",
+  "dependencies": {
+    "jose": "^5.3.0",
+    "pg": "^8.11.5"
+  }
+}
