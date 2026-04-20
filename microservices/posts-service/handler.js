@@ -5,8 +5,8 @@ const {
   unauthorizedResponse,
   forbiddenResponse,
   corsHeaders,
-} = require('../shared/auth');
-const { query } = require('../shared/db');
+} = require('./shared/auth');
+const { query } = require('./shared/db');
 
 /**
  * posts-service — Maneja POST /api/posts y DELETE /api/posts/{id}

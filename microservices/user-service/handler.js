@@ -1,7 +1,7 @@
 'use strict';
 
-const { verifyToken, unauthorizedResponse, corsHeaders } = require('../shared/auth');
-const { query } = require('../shared/db');
+const { verifyToken, unauthorizedResponse, corsHeaders } = require('./shared/auth');
+const { query } = require('./shared/db');
 
 /**
  * user-service — Maneja GET /api/me y PUT /api/me

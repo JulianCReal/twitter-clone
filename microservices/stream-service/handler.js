@@ -1,7 +1,7 @@
 'use strict';
 
-const { corsHeaders } = require('../shared/auth');
-const { query } = require('../shared/db');
+const { corsHeaders } = require('./shared/auth');
+const { query } = require('./shared/db');
 
 /**
  * stream-service — Endpoints públicos de lectura
