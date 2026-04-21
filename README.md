@@ -1,4 +1,4 @@
-# twitter-clone
+# TwitterClone
 
 Aplicación tipo Twitter que permite a usuarios autenticados publicar posts de hasta 140 caracteres en un feed público global. Desarrollado como proyecto académico para la asignatura **Transformación Digital y Soluciones Empresariales (TDSE)** — Escuela Colombiana de Ingeniería Julio Garavito.
 
@@ -7,6 +7,19 @@ Aplicación tipo Twitter que permite a usuarios autenticados publicar posts de h
 ## Descripción del proyecto
 
 TwitterClone permite a cualquier visitante ver el feed público de posts sin necesidad de autenticarse. Los usuarios que inician sesión con Auth0 pueden crear posts de hasta 140 caracteres y eliminar sus propios posts. El sistema registra automáticamente al usuario en la primera sesión usando los datos del token JWT.
+
+---
+
+## 🌐 Links del proyecto
+
+| Recurso | URL |
+|---------|-----|
+| **Frontend (producción)** | https://d25wl9z0bnjvbw.cloudfront.net |
+| **API Gateway (microservicios)** | https://fmmdr7u2wf.execute-api.us-east-1.amazonaws.com/prod |
+| **Repositorio GitHub** | https://github.com/JulianCReal/twitter-clone |
+| **Swagger UI (local)** | http://localhost:8080/swagger-ui.html |
+
+> El Swagger UI del monolito corre localmente. Ver sección [Ejecutar el backend](#3-ejecutar-el-backend) para instrucciones. Se incluye captura de pantalla en la sección de pruebas.
 
 ---
 
@@ -29,17 +42,17 @@ El proyecto evoluciona de monolito a microservicios:
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
-│                 FASE 2 — MICROSERVICIOS (Parte 5)           │
+│              FASE 2 — MICROSERVICIOS AWS                    │
 │                                                             │
-│   [React/TS Frontend]                                       │
+│   [React/TS Frontend — CloudFront + S3]                     │
 │         │                                                   │
 │         ▼                                                   │
 │   [AWS API Gateway]                                         │
 │     ┌───┼───────┐                                           │
 │     ▼   ▼       ▼                                           │
-│  [λ User] [λ Posts] [λ Stream]   ← AWS Lambda              │
+│  [λ User] [λ Posts] [λ Stream]   ← AWS Lambda (Node.js)    │
 │         │                                                   │
-│   [Auth0 JWT]  [AWS RDS / DynamoDB]                         │
+│   [Auth0 JWT]       [AWS RDS PostgreSQL]                    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -55,6 +68,29 @@ Usuario → Frontend → Auth0 (login) → JWT access token
                          Si válido → procesa request
 ```
 
+### Infraestructura de despliegue
+
+```
+Internet
+   │
+   ▼
+[CloudFront HTTPS]  ←── d25wl9z0bnjvbw.cloudfront.net
+   │
+   ▼
+[S3 Static Website]  ←── twitter-clone-frontend-tdse-1
+   │ (React build)
+   │
+   ├──→ [Auth0]  ←── autenticación SPA
+   │
+   └──→ [API Gateway]  ←── fmmdr7u2wf.execute-api.us-east-1.amazonaws.com/prod
+              │
+              ├── /api/users/*   → Lambda user-service
+              ├── /api/posts/*   → Lambda posts-service
+              └── /api/stream    → Lambda stream-service
+                        │
+                        └── [RDS PostgreSQL]
+```
+
 ---
 
 ## Stack tecnológico
@@ -64,15 +100,16 @@ Usuario → Frontend → Auth0 (login) → JWT access token
 | Frontend | React + TypeScript | 18.3 / 5.5 |
 | Auth (frontend) | Auth0 React SDK | 2.2.4 |
 | HTTP client | Axios | 1.7 |
-| Backend | Spring Boot | 3.2.5 |
+| Backend (monolito) | Spring Boot | 3.2.5 |
 | Lenguaje backend | Java | 21 |
 | Seguridad | Spring Security OAuth2 Resource Server | 6.2 |
 | Proveedor de identidad | Auth0 (RS256 JWT) | — |
 | Base de datos (dev) | H2 (archivo local) | — |
-| Base de datos (prod) | PostgreSQL | — |
+| Base de datos (prod) | PostgreSQL (AWS RDS) | — |
 | Documentación API | SpringDoc OpenAPI / Swagger UI | 2.5 |
-| Microservicios | AWS Lambda + API Gateway | — |
-| Hosting frontend | Amazon S3 (static website) | — |
+| Microservicios | AWS Lambda (Node.js 20) | — |
+| API Gateway | AWS API Gateway (REST) | — |
+| Hosting frontend | Amazon S3 + CloudFront | — |
 
 ---
 
@@ -80,8 +117,8 @@ Usuario → Frontend → Auth0 (login) → JWT access token
 
 ```
 twitter-clone/
-├── .gitignore                    ← Cubre backend + frontend + microservicios
-├── README.md                     ← Este archivo
+├── .gitignore
+├── README.md
 │
 ├── backend/                      ← Monolito Spring Boot
 │   ├── pom.xml
@@ -107,8 +144,6 @@ twitter-clone/
 │       │   └── resources/
 │       │       └── application.yml
 │       └── test/
-│           ├── java/.../PostControllerTest.java
-│           └── resources/application-test.yml
 │
 ├── frontend/                     ← App React + TypeScript
 │   ├── package.json
@@ -118,7 +153,6 @@ twitter-clone/
 │       ├── types.ts
 │       ├── auth0-config.ts
 │       ├── App.tsx
-│       ├── react-app-env.d.ts
 │       ├── components/
 │       │   ├── Navbar.tsx/css
 │       │   ├── PostForm.tsx/css
@@ -130,10 +164,16 @@ twitter-clone/
 │       └── services/
 │           └── api.ts
 │
-└── microservices/                ← AWS Lambda (Parte 5 — pendiente)
+└── microservices/                ← AWS Lambda (Node.js)
     ├── user-service/
+    │   ├── handler.js
+    │   └── shared/
     ├── posts-service/
+    │   ├── handler.js
+    │   └── shared/
     └── stream-service/
+        ├── handler.js
+        └── shared/
 ```
 
 ---
@@ -150,7 +190,7 @@ twitter-clone/
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/TU-ORG/twitter-clone.git
+git clone https://github.com/JulianCReal/twitter-clone.git
 cd twitter-clone
 ```
 
@@ -162,17 +202,16 @@ cd twitter-clone
 3. Pestaña Settings → configurar URLs:
 
 ```
-Allowed Callback URLs:  http://localhost:3000
-Allowed Logout URLs:    http://localhost:3000
-Allowed Web Origins:    http://localhost:3000
+Allowed Callback URLs:  http://localhost:3000, https://d25wl9z0bnjvbw.cloudfront.net
+Allowed Logout URLs:    http://localhost:3000, https://d25wl9z0bnjvbw.cloudfront.net
+Allowed Web Origins:    http://localhost:3000, https://d25wl9z0bnjvbw.cloudfront.net
 ```
 
 #### Crear la API
 1. Dashboard → **APIs** → **Create API**
 2. Nombre: `TwitterClone API`
-3. Identifier: `https://api.twitterclone.com`
+3. Identifier (Audience): `https://api.twitterclone.com`
 4. Algorithm: **RS256**
-5. En la pestaña de tu SPA → **APIs** → activar **User Access** para TwitterClone API
 
 #### Agregar claims al access token
 1. **Actions → Library → Create Action** → Build from scratch
@@ -191,7 +230,7 @@ exports.onExecutePostLogin = async (event, api) => {
 
 ### 3. Ejecutar el backend
 
-Edita `backend/src/main/resources/application.yml` con tu dominio Auth0:
+Edita `backend/src/main/resources/application.yml`:
 
 ```yaml
 spring:
@@ -215,7 +254,7 @@ cd backend
 | URL | Descripción |
 |-----|-------------|
 | `http://localhost:8080/api/stream` | Feed público |
-| `http://localhost:8080/swagger-ui.html` | Documentación Swagger |
+| `http://localhost:8080/swagger-ui.html` | Documentación Swagger UI |
 | `http://localhost:8080/h2-console` | Consola base de datos (dev) |
 
 ### 4. Ejecutar el frontend
@@ -299,6 +338,8 @@ cd backend
 | Ver perfil `/api/me` con datos reales | ✅ |
 | Logout y verificar que el feed sigue visible | ✅ |
 | Probar endpoints con Swagger UI + JWT Bearer | ✅ |
+| Frontend accesible vía HTTPS (CloudFront) | ✅ |
+| CORS correcto entre CloudFront y API Gateway | ✅ |
 
 ---
 
@@ -309,18 +350,38 @@ cd backend
 - Se valida el `audience` del token para asegurar que pertenece a esta API específica
 - El campo `sub` del JWT vincula el token con el usuario en la BD — nunca se almacenan contraseñas
 - Las sesiones son **stateless** — no hay cookies ni estado en servidor
-- CORS configurado para permitir solo los orígenes del frontend
+- CORS configurado en las Lambdas mediante la variable `ALLOWED_ORIGIN` para permitir solo el origen de CloudFront
+- El frontend se sirve sobre HTTPS mediante CloudFront — requerido por Auth0 SPA SDK
 - Los secretos de Auth0 nunca se commitean al repositorio (cubiertos por `.gitignore`)
 
 ---
 
 ## Despliegue
 
-- **Frontend**: Amazon S3 static website — ver instrucciones en `frontend/README.md`
-- **Microservicios**: AWS Lambda + API Gateway — Parte 5
+### Frontend (Amazon S3 + CloudFront)
+
+```bash
+cd frontend
+npm run build
+aws s3 sync build/ s3://twitter-clone-frontend-tdse-1 --delete
+```
+
+> CloudFront distribuye el contenido con HTTPS desde `https://d25wl9z0bnjvbw.cloudfront.net`.  
+> Nota: CloudFront en AWS Academy (Learner Lab) requiere la consola web — los permisos CLI de `cloudfront:*` están restringidos.
+
+### Microservicios (AWS Lambda)
+
+Cada Lambda se despliega manualmente desde la consola AWS con las siguientes variables de entorno:
+
+| Variable | Descripción |
+|----------|-------------|
+| `AUTH0_DOMAIN` | Dominio del tenant Auth0 |
+| `AUTH0_AUDIENCE` | Audience de la API Auth0 |
+| `DATABASE_URL` | Connection string de RDS PostgreSQL |
+| `ALLOWED_ORIGIN` | `https://d25wl9z0bnjvbw.cloudfront.net` |
 
 ---
 
 ## Equipo
 
-Proyecto desarrollado por Karol Estefany Estupiñan Viancha y Julian David Castiblanco Real para TDSE — ECI 2026.
+Proyecto desarrollado por **Julian David Castiblanco Real** y **Karol Estefany Estupiñan Viancha** para TDSE — Escuela Colombiana de Ingeniería Julio Garavito, 2026.
