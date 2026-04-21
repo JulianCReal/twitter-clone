@@ -1,7 +1,6 @@
 # TwitterClone
 
-Aplicación tipo Twitter que permite a usuarios autenticados publicar posts de hasta 140 caracteres en un feed público global. Desarrollado como proyecto académico para la asignatura **Transformación Digital y Soluciones Empresariales (TDSE)** — Escuela Colombiana de Ingeniería Julio Garavito.
-
+Aplicación tipo Twitter que permite a usuarios autenticados publicar posts de hasta 140 caracteres en un feed público global. Desarrollado como proyecto académico para la asignatura **Transformación Digital y Soluciones Empresariales (TDSE)**.
 ---
 
 ## Descripción del proyecto
@@ -10,7 +9,7 @@ TwitterClone permite a cualquier visitante ver el feed público de posts sin nec
 
 ---
 
-## 🌐 Links del proyecto
+## Links del proyecto
 
 | Recurso | URL |
 |---------|-----|
@@ -19,8 +18,7 @@ TwitterClone permite a cualquier visitante ver el feed público de posts sin nec
 | **Repositorio GitHub** | https://github.com/JulianCReal/twitter-clone |
 | **Swagger UI (local)** | http://localhost:8080/swagger-ui.html |
 
-> El Swagger UI del monolito corre localmente. Ver sección [Ejecutar el backend](#3-ejecutar-el-backend) para instrucciones. Se incluye captura de pantalla en la sección de pruebas.
-
+> El Swagger UI del monolito corre localmente. Ver sección [Ejecutar el backend](#3-ejecutar-el-backend) para instrucciones.
 ---
 
 ## Arquitectura
@@ -184,8 +182,8 @@ twitter-clone/
 
 - Java 21
 - Node.js 18+
-- Maven 3.9+ (o usar `./mvnw` incluido)
-- Cuenta en [Auth0](https://auth0.com) (plan gratuito es suficiente)
+- Maven 3.9+ (o usar `./mvnw` que está incluido)
+- Cuenta en [Auth0](https://auth0.com) 
 
 ### 1. Clonar el repositorio
 
@@ -286,14 +284,14 @@ App disponible en `http://localhost:3000`
 
 | Método | Endpoint | Auth | Descripción |
 |--------|----------|------|-------------|
-| `GET` | `/api/stream` | ❌ Público | Feed global de posts (paginado) |
-| `GET` | `/api/posts` | ❌ Público | Todos los posts |
-| `GET` | `/api/posts/{id}` | ❌ Público | Un post específico |
-| `POST` | `/api/posts` | ✅ JWT | Crear post (máx 140 chars) |
-| `DELETE` | `/api/posts/{id}` | ✅ JWT | Eliminar propio post |
-| `GET` | `/api/me` | ✅ JWT | Perfil del usuario autenticado |
-| `PUT` | `/api/me` | ✅ JWT | Actualizar perfil |
-| `GET` | `/api/users/{id}` | ❌ Público | Perfil público de un usuario |
+| `GET` | `/api/stream` |  Público | Feed global de posts (paginado) |
+| `GET` | `/api/posts` |  Público | Todos los posts |
+| `GET` | `/api/posts/{id}` |  Público | Un post específico |
+| `POST` | `/api/posts` | JWT | Crear post (máx 140 chars) |
+| `DELETE` | `/api/posts/{id}` | JWT | Eliminar propio post |
+| `GET` | `/api/me` | JWT | Perfil del usuario autenticado |
+| `PUT` | `/api/me` | JWT | Actualizar perfil |
+| `GET` | `/api/users/{id}` | Público | Perfil público de un usuario |
 
 La documentación completa con ejemplos de request/response está disponible en Swagger UI (`/swagger-ui.html`).
 
@@ -312,15 +310,15 @@ cd backend
 
 | # | Test | Descripción | Resultado |
 |---|------|-------------|-----------|
-| 1 | `getPostsPublic` | `GET /api/posts` sin token | ✅ 200 OK |
-| 2 | `getStreamPublic` | `GET /api/stream` sin token | ✅ 200 OK |
-| 3 | `createPost_withValidJwt` | `POST /api/posts` con JWT válido | ✅ 201 Created |
-| 4 | `createPost_withoutJwt` | `POST /api/posts` sin token | ✅ 401 Unauthorized |
-| 5 | `createPost_tooLong` | Post de 141 caracteres | ✅ 400 Bad Request |
-| 6 | `createPost_empty` | Post con contenido vacío | ✅ 400 Bad Request |
-| 7 | `getMyProfile_withValidJwt` | `GET /api/me` con JWT | ✅ 200 OK |
-| 8 | `getMyProfile_withoutJwt` | `GET /api/me` sin token | ✅ 401 Unauthorized |
-| 9 | `deletePost_notOwner` | `DELETE` de post ajeno | ✅ 403 Forbidden |
+| 1 | `getPostsPublic` | `GET /api/posts` sin token |  200 OK |
+| 2 | `getStreamPublic` | `GET /api/stream` sin token |  200 OK |
+| 3 | `createPost_withValidJwt` | `POST /api/posts` con JWT válido |  201 Created |
+| 4 | `createPost_withoutJwt` | `POST /api/posts` sin token |  401 Unauthorized |
+| 5 | `createPost_tooLong` | Post de 141 caracteres |  400 Bad Request |
+| 6 | `createPost_empty` | Post con contenido vacío | 400 Bad Request |
+| 7 | `getMyProfile_withValidJwt` | `GET /api/me` con JWT |  200 OK |
+| 8 | `getMyProfile_withoutJwt` | `GET /api/me` sin token |  401 Unauthorized |
+| 9 | `deletePost_notOwner` | `DELETE` de post ajeno |  403 Forbidden |
 
 **Todos los tests pasan correctamente.**
 
@@ -367,7 +365,7 @@ aws s3 sync build/ s3://twitter-clone-frontend-tdse-1 --delete
 ```
 
 > CloudFront distribuye el contenido con HTTPS desde `https://d25wl9z0bnjvbw.cloudfront.net`.  
-> Nota: CloudFront en AWS Academy (Learner Lab) requiere la consola web — los permisos CLI de `cloudfront:*` están restringidos.
+> Nota: CloudFront en AWS Academy (Learner Lab) requiere la consola web — los permisos CLI de `cloudfront:*` están restringidos, por lo que tuvimos que usar cuenta personal para su correcto despliegue.
 
 ### Microservicios (AWS Lambda)
 
@@ -381,6 +379,10 @@ Cada Lambda se despliega manualmente desde la consola AWS con las siguientes var
 | `ALLOWED_ORIGIN` | `https://d25wl9z0bnjvbw.cloudfront.net` |
 
 ---
+
+## Video del despliegue y explicación
+- https://youtu.be/P4R4IOAZfuI?si=eUZN_YDmz3LOzlgA
+
 
 ## Equipo
 
