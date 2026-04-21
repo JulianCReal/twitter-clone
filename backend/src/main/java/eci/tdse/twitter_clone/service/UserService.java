@@ -62,7 +62,6 @@ public class UserService {
                             .email(email)
                             .username(username)
                             .avatarUrl(picture)
-                            .createdAt(java.time.Instant.now())
                             .build();
 
                     log.info("Nuevo usuario creado desde Auth0: {} (sub: {})", username, auth0Id);
@@ -128,7 +127,6 @@ public class UserService {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .avatarUrl(user.getAvatarUrl())
-                .createdAt(user.getCreatedAt())
                 .postCount(postRepository.countByUserId(user.getId()))
                 .build();
     }
